@@ -8,14 +8,6 @@ library(readr)
 library(ggthemes)
 library(grid)
 library(directlabels)
-# library(tidyverse)
-
-# all_cons <- DBI::dbListConnections(MySQL())
-# print(all_cons)
-# for (con in all_cons){
-#   DBI::dbDisconnect(con)
-# }
-# print(paste(length(all_cons), " connections killed."))
 
 mycss <- "
 #plot-container {
@@ -39,15 +31,11 @@ ui <- fluidPage(
    sidebarLayout(
       sidebarPanel(
          selectizeInput('words', 'Words', choices=NULL, multiple=TRUE),
-         textInput("regex", "RegEx", "need"), # TODO check if valid regex
+         textInput("regex", "RegEx", ""), # TODO check if valid regex
+         checkboxInput("parent", "Include Mother / Father", value = TRUE),
+         checkboxInput("gender", "Split by Gender", value = TRUE),
          sliderInput("slider", label="Age Range (months)", value=c(12, 60), step=6, min=0, max=96),
          sliderInput("slider2", label="Group Size (months)", value=12, step=3, min=3, max=24)
-         # selectInput("min_age", label = "Min Age (months)", 
-         #             choices = seq(0, 90, 6), selected = 12),
-         # selectInput("max_age", label = "Max Age (months)", 
-         #             choices = seq(5, 95, 6), selected = 65),
-         # selectInput("group_size", label = "Group Size (months)", 
-         #             choices = seq(3, 24, 3), selected = 12)
       ),
 
       mainPanel(
@@ -96,17 +84,8 @@ server <- function(input, output, session) {
     max_age = as.double(input$slider[2]) - 1 # this is to match childfreq; helps debugging
     groupsize = as.double(input$slider2)
     
-    print(min_age)
-    print(max_age)
-    print(groupsize)
-    
-    # min_age = 12
-    # max_age = 60
-    # groupsize = 12
-    # word = 'eat'
-    
     original_tbl() %>%
-      filter(speaker_role=="Target_Child", between(target_child_age, min_age*30, max_age*30)) %>%
+      filter(between(target_child_age, min_age*30, max_age*30)) %>%
       mutate(target_child_age = floor((target_child_age/30 - min_age) / groupsize) * groupsize + min_age) %>%
       group_by(speaker_role, target_child_age) %>%
       mutate(total_tokens = sum(total_occurences)) %>% # TODO somehow use summarise for these 3 lines?
@@ -118,32 +97,21 @@ server <- function(input, output, session) {
   # TODO exclude uncommon words from this list
   
   input_words <- reactive({
-    input$words
-    #if (is.null(input$words)) word_options()[1] else input$words
+    c("doll")
+    #input$words
   })
   
   trajectory_data <- reactive({
     print("REGEX!")
-    # print(regexpr(input$regex, "dog", perl=TRUE)[1])
-    # print(input$regex)
-    #words <- input$words
-    #word_options <- word_options() # just so it can load at the same time
-    #print(words)
     
-    # TODO
-    # if (length(words) == 0) {
-    #   words = c("dog", "cat")
+    # if (length(input_words()) == 0 && input$regex == "") {
+    #   return(data.frame())
     # }
-    
-    #words <- ifelse(length(input$words) == 0, c("age", "fun"), input_words())
     
     print("FILTERED TABLE")
     print(filtered_tbl())
-    result0 <- filtered_tbl() %>%
-      select(-target_child_sex)
-      # filter(regexpr(input$regex, gloss, perl=TRUE)[1] != -1)
-      # filter(gloss %in% words | grepl(input$regex, gloss))
-      # filter(gloss == input$regex)
+    result0 <- filtered_tbl() #%>%
+      #select(-target_child_sex)
     
     if (input$regex != "") {
       result0 <- filter(result0, gloss %in% input_words() | grepl(input$regex, gloss))
@@ -154,9 +122,15 @@ server <- function(input, output, session) {
     print("POST REGEX")
     print(result0)
     
+    if (input$gender) {
+      result0 <- result0 %>%
+        filter(target_child_sex != "NULL") %>%
+        group_by(speaker_role, target_child_age, target_child_sex, gloss)
+    } else {
+      result0 <- group_by(result0, speaker_role, target_child_age, gloss)
+    }
+    
     result <- result0 %>%
-      # filter(gloss %in% words | regexpr(input$regex, gloss, perl=TRUE)[1] != -1) %>%
-      group_by(speaker_role, target_child_age, gloss) %>%
       mutate(gloss_counts = sum(total_occurences))
     
     print(result)
@@ -176,23 +150,44 @@ server <- function(input, output, session) {
     result2
   })
   
+  point_and_line <- reactive({
+    if (input$parent) {
+      geom_point(aes(col=speaker_role)) +
+      geom_line(aes(col=speaker_role))
+    } else {
+      geom_point(aes(col=gloss)) +
+      geom_line(aes(col=gloss))
+    }
+  })
+  
   
   trajectory_plot <- reactive({
     print('plotting')
     #traj <- filtered_tbl()
     traj <- trajectory_data()
     print(traj)
-    p <- ggplot(traj, aes(x=target_child_age, y=occurences_per_one_million, color=gloss)) + # col=gloss
-      # geom_point(aes(col=speaker_role)) +
-      # geom_line(aes(col=speaker_role)) +
-      geom_point() + geom_line() +
-      # facet_wrap(~target_child_sex) +
+    
+    if (input$parent) {
+      p <- ggplot(traj, aes(x=target_child_age, y=occurences_per_one_million, color=speaker_role, shape=gloss))#, color=speaker_role))
+    } else {
+      p <- ggplot(traj %>% filter(speaker_role=="Target_Child"), aes(x=target_child_age, y=occurences_per_one_million, color=gloss))
+    }
+    p <- p +  
+    # geom_point(aes(col=speaker_role)) +
+      #geom_line(aes(col=speaker_role)) +
+      geom_point() + 
+      geom_line() +
       xlab("Age") +
       ylab("Occurences / 1,000,000 Words") +
-      scale_colour_solarized(guide = FALSE) +
-      scale_fill_solarized(guide = FALSE) +
+      scale_colour_solarized() +
+      scale_fill_solarized() + # guide = FALSE
       geom_dl(aes(label=gloss), method = list(dl.trans(y = y + 0.5, x = x - 0.5), "last.qp", cex=1)) +
       scale_x_continuous(breaks = range_seq()) 
+    
+    if (input$gender) {
+      p <- p + facet_wrap(~target_child_sex)
+    }
+    
     p
   })
   
