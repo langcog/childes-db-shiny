@@ -9,7 +9,7 @@ ui <- fluidPage(
   
   bsCollapse(id = "doc", open = "title",
     bsCollapsePanel(title = h3("Mean Length of Utterance"),
-                    includeMarkdown("docs/description.md"),
+                    includeMarkdown("../docs/mlu-description.md"),
                     value = "title",
                     style = "default")
   ),

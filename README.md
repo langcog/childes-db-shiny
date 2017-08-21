@@ -1,8 +1,13 @@
-# childes-db-mlu
+# childes-db-shiny
 
-Shiny app that displays computed MLUs from CHILDES. 
+Shiny apps that display:
+* frequency counts [implemented]
+* computed MLUs [implemented]
+* corpus statistics
+* co-occurrences
+* frequency distribution
 
-## Notes
+## Old MLU notes
 
 * Currently computed on WORDS only
 * All utterances in transcript

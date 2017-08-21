@@ -5,7 +5,7 @@ library(ggthemes)
 library(magrittr)
 
 # adam <- read_feather("adam.feather")
-brown <- read_feather("brown_utts.feather")
+brown <- read_feather("../data/brown_utts.feather")
 
 DAYS_PER_YEAR <- 365.25
 DAYS_PER_MONTH <- DAYS_PER_YEAR / 12
