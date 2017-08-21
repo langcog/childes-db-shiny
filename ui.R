@@ -2,7 +2,6 @@ library(shiny)
 library(shinyBS)
 library(shinythemes)
 
-
 ui <- fluidPage(
   titlePanel("Mean Length of Utterance"),
   

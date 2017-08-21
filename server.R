@@ -2,7 +2,6 @@ library(shiny)
 library(tidyverse)
 library(feather)
 library(ggthemes)
-library(DT)
 
 # adam <- read_feather("adam.feather")
 brown <- read_feather("brown_utts.feather")
@@ -24,14 +23,6 @@ server <- function(input, output, session) {
       pull(target_child_name) %>%
       unique
   })
-  
-  # # UTTERANCES
-  # utts <- reactive({
-  #   print("utts")
-  #   print(input$target_children)
-  #   data() %>%
-  #     filter()
-  # })
   
   # ROLES USED IN DATA
   roles <- reactive({
@@ -91,7 +82,7 @@ server <- function(input, output, session) {
                y = mlu, 
                col = speaker_role)) +
       geom_point(aes(size = n)) +
-      geom_smooth(se=FALSE) + 
+      geom_smooth(se=FALSE, span=1) + 
       facet_wrap(~target_child_name) +
       ylab("Mean Length of Utterance") + 
       xlab("Target Child Age (years)") + 
@@ -103,7 +94,5 @@ server <- function(input, output, session) {
       theme(legend.position = "bottom") 
   })
   
-  output$trajectory_table <- renderDataTable({
-    datatable(mlus())
-  })
+  output$trajectory_table <- renderDataTable({mlus()})
 }
