@@ -1,2 +1,3 @@
-# shiny-app-childfreq
-Shiny app that displays child frequencies from CHILDES. Inspiration taken from http://childfreq.sumsar.net/.
+# childes-db-mlu
+
+Shiny app that displays computed MLUs from CHILDES. 
