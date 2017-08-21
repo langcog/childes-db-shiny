@@ -9,6 +9,8 @@ library(ggthemes)
 library(grid)
 library(directlabels)
 
+#alksdjfaklsdfj 
+
 mycss <- "
 #plot-container {
 position: relative;
@@ -113,7 +115,8 @@ server <- function(input, output, session) {
       #select(-target_child_sex)
     
     if (input$regex != "") {
-      result0 <- filter(result0, gloss %in% input_words() | grepl(input$regex, gloss))
+      #result0 <- filter(result0, gloss %in% input_words() | grepl(input$regex, gloss))
+      result0 <- filter(result0, gloss %in% input_words() | regexpr(input$regex, gloss, perl=TRUE)[1] != -1)
     } else {
       result0 <- filter(result0, gloss %in% input_words())
     }
