@@ -1,4 +1,3 @@
-# input <-list(corpus = "Providence", children_to_plot = c("Alex"))
 # MAIN SHINY SERVER
 server <- function(input, output, session) {
   

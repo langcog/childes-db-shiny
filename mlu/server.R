@@ -1,84 +1,121 @@
-library(shiny)
-library(tidyverse)
-library(feather)
-library(ggthemes)
-library(magrittr)
-
-# adam <- read_feather("adam.feather")
-brown <- read_feather("../data/brown_utts.feather")
-
-DAYS_PER_YEAR <- 365.25
-DAYS_PER_MONTH <- DAYS_PER_YEAR / 12
-MONTHS_PER_YEAR <- 12
-
 # MAIN SHINY SERVER
 server <- function(input, output, session) {
   
-  # --------------------- DATA ---------------------
+  # --------------------- DATA FOR SELECTORS ---------------------
   
-  # ALL DATA
-  all_data <- reactive({
-    brown 
+  # CORPORA IN COLLECTION
+  corpora <- reactive({
+    req(input$collection)
+    
+    corpora_df %>%
+      filter(collection_name == input$collection) %>%
+      pull(corpus_name)
   })
   
-  # FILTERED DATA
-  data <- reactive({
-    all_data() %>%
-      filter(target_child_name %in% input$children_to_plot,
-             speaker_role %in% input$roles_to_plot)
-  })
-  
-  # KIDS IN DATA
-  all_children <- reactive({
-    all_data() %>%
-      pull(target_child_name) %>%
-      unique
+  # CHILDREN IN CORPUS
+  children <- reactive({
+    req(input$corpus)
+    
+    participants_df %>%
+      filter(corpus_name %in% input$corpus, 
+             role == "Target_Child", 
+             !is.na(name)) %>%
+      pull(name)
   })
   
   # ROLES USED IN DATA
-  all_roles <- reactive({
-    all_data() %>%
-      pull(speaker_role) %>%
+  # note, other matches are by ID but roles are duplicated across corpora and so 
+  # we want to match e.g. all "Mother"s
+  roles <- reactive({
+    req(input$children_to_plot)
+    
+    # workaround related to issue #6 in childesr repo
+    target_children_ids <- participants_df %>%
+      filter(corpus_name %in% input$corpus,
+             name %in% input$children_to_plot) %>%
+      pull(target_child_id)
+    
+    participants_df %>%
+      filter(target_child_id %in% target_children_ids,
+             corpus_name %in% input$corpus,
+             !is.na(role)) %>%
+      pull(role) %>%
       unique
   })
   
   # AGE MIN AND MAX FROM DATA
   age_min <- reactive({
+    req(input$children_to_plot)
+    
     ifelse(is.null(data()$target_child_age), 1, min(data()$target_child_age))/DAYS_PER_YEAR
   })
   
   age_max <- reactive({
+    req(input$children_to_plot)
+    
     ifelse(is.null(data()$target_child_age), 1, max(data()$target_child_age))/DAYS_PER_YEAR
+  })
+  
+  # --------------------- ACTUAL DATA LOADING ---------------------
+  
+  # DATA
+  data <- eventReactive(input$goButton, {
+    req(input$children_to_plot)
+    
+    if (!is.null(input$collection) &
+        !is.null(input$corpus)) {
+      get_utterances(collection = input$collection, 
+                     corpus = input$corpus,
+                     child = input$children_to_plot)
+    }
   })
   
   # --------------------- UI ELEMENTS ---------------------
   
-  # SELECTOR FOR KIDS
-  output$children_selector <- renderUI({
-    selectizeInput(inputId = "children_to_plot",
-                   label = "Target Child (Corpus)", 
-                   choices = all_children(), 
-                   selected = "Adam", 
+  # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
+  
+  # SELECTOR FOR CORPORA
+  output$corpus_selector <- renderUI({
+    selectizeInput(inputId = "corpus",
+                   label = "Corpus", 
+                   choices = corpora(), 
+                   selected = corpora()[1],
                    multiple = TRUE)
   })
   
+  # SELECTOR FOR CHILDREN
+  output$children_selector <- renderUI({
+    selectizeInput(inputId = "children_to_plot",
+                   label = "Target Child", 
+                   choices = children(), 
+                   selected = children()[1], 
+                   multiple = TRUE)
+  })
   
   # SELECTOR FOR ROLES
   output$role_selector <- renderUI({
     selectizeInput(inputId = "roles_to_plot",
                    label = "Speakers", 
-                   choices = all_roles(), 
+                   choices = roles(), 
                    selected = "Target_Child", 
                    multiple = TRUE)
   })
   
+  # WORD SELECTOR
+  output$word_selector <- renderUI({
+    selectizeInput("word", 
+                   label = "Word", 
+                   selected = all_words()[1],
+                   choices = all_words(), 
+                   multiple = FALSE)
+  })
+  
   # SLIDER FOR AGE RANGE
   output$age_range <- renderUI({
-    # print(age_min())
     sliderInput("age_range", 
                 label="Ages to include (years)", 
                 value=c(age_min, age_max), 
-                step=.25, min=floor(age_min()), max=ceiling(age_max()))
+                step=.5, min=floor(age_min()), max=ceiling(age_max()))
   })
   
   # --------------------- COMPUTATION OF MLUS ---------------------
@@ -86,9 +123,14 @@ server <- function(input, output, session) {
   
   # COMPUTE MLUS
   mlus <- reactive({
+    req(input$roles_to_plot)
+    req(input$age_range)
+    req(data())
+    
     filtered_data <- data() %>%
       filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
-             target_child_age <= input$age_range[2] * DAYS_PER_YEAR) 
+             target_child_age <= input$age_range[2] * DAYS_PER_YEAR, 
+             speaker_role %in% input$roles_to_plot) 
     
     if(input$age_binwidth > 0) {
      filtered_data %<>%
@@ -112,6 +154,8 @@ server <- function(input, output, session) {
   
   # TRAJECTORY
   output$trajectory_plot <- renderPlot({
+    req(mlus())
+    
     ggplot(mlus(), 
            aes(x = age_y,
                y = mlu, 
