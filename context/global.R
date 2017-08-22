@@ -25,6 +25,7 @@ brown <- read_feather("../data/brown_utts.feather")
 DAYS_PER_YEAR <- 365.25
 DAYS_PER_MONTH <- DAYS_PER_YEAR / 12
 MONTHS_PER_YEAR <- 12
+MIN_N_FOR_BIGRAMS <- 50
 
 # CHILDES DATA
 collections_df <- get_collections() %>% tbl_df() 

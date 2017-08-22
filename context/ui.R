@@ -22,9 +22,8 @@ ui <- fluidPage(
       uiOutput("corpus_selector"), 
       uiOutput("children_selector"),
       uiOutput("role_selector"),
-      uiOutput("word_selector")
-      # ,
-      # actionButton(inputId = "goButton", label = "Plot it!")
+      uiOutput("word_selector"),
+      actionButton(inputId = "goButton", label = "Get Data")
     ),
     
     mainPanel(
