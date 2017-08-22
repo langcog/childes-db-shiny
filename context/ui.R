@@ -23,6 +23,8 @@ ui <- fluidPage(
       uiOutput("children_selector"),
       uiOutput("role_selector"),
       uiOutput("word_selector")
+      # ,
+      # actionButton(inputId = "goButton", label = "Plot it!")
     ),
     
     mainPanel(

@@ -1,78 +1,31 @@
-# walk(DBI::dbListConnections(RMySQL::MySQL()), DBI::dbDisconnect)
-
-library(shiny)
-library(tidyverse)
-library(feather)
-library(ggthemes)
-library(magrittr)
-library(childesr)
-library(tidytext)
-library(stringr)
-library(forcats)
-
-brown <- read_feather("../data/brown_utts.feather")
-
-# word <- "dog"
-# contexts <- brown %>%
-#   select(gloss, speaker_role) %>%
-#   filter(str_detect(gloss, word)) %>%
-#   unnest_tokens(output = "context", input = "gloss", token = "ngrams", n = 2) %>%
-#   filter(str_detect(context, word)) %>%
-#   group_by(context, speaker_role) %>%
-#   count %>%
-#   arrange(desc(n))
-
-DAYS_PER_YEAR <- 365.25
-DAYS_PER_MONTH <- DAYS_PER_YEAR / 12
-MONTHS_PER_YEAR <- 12
-
-# CHILDES DATA
-collections_df <- get_collections() %>% tbl_df() 
-collections <- as.list(collections_df$collection_id)
-names(collections) <- collections_df$collection_name
-
-corpora_df <- get_corpora() %>% tbl_df()
-participants_df <- get_participants() %>% 
-  tbl_df()
-
+# input <-list(corpus = "Providence", children_to_plot = c("Alex"))
 # MAIN SHINY SERVER
 server <- function(input, output, session) {
   
   # --------------------- DATA ---------------------
-  
+
   
   # CORPORA IN COLLECTION
   corpora <- reactive({
-    cdf <- corpora_df %>%
-      filter(collection_id == input$collection) 
-      
-    corpora <- as.list(cdf$corpus_id)
-    names(corpora) <- cdf$corpus_name
-    
-    return(corpora)
+    corpora_df %>%
+      filter(collection_name == input$collection) %>%
+      pull(corpus_name)
   })
   
   # CHILDREN IN CORPUS
   children <- reactive({
-    print(input$corpus)
     if (is.null(input$corpus)) {
-      print("not filtering corpus")
-      pdf <- participants_df %>%
+      participants_df %>%
         filter(role == "Target_Child", 
-               !is.na(name))
+               !is.na(name)) %>%
+        pull(name)
     } else {
-      print("filtering corpus")
-      pdf <- participants_df %>%
-        filter(corpus_id == input$corpus, 
+      participants_df %>%
+        filter(corpus_name == input$corpus, 
                role == "Target_Child", 
-               !is.na(name))
+               !is.na(name)) %>%
+        pull(name)
     }
-    
-    children <- as.list(pdf$target_child_id)
-    names(children) <- pdf$name
-    print(children)
-    
-    return(children)
   })
   
   # ROLES USED IN DATA
@@ -80,17 +33,24 @@ server <- function(input, output, session) {
   # we want to match e.g. all "Mother"s
   roles <- reactive({
     if (is.null(input$children_to_plot)) {
-      pdf <- participants_df %>%
-        filter(!is.na(role))
+      participants_df %>%
+        filter(!is.na(role)) %>%
+        pull(role) %>%
+        unique
     } else {
-      pdf <- participants_df %>%
-        filter(id == input$children_to_plot,
-               !is.na(role)) 
+      # workaround related to issue #6 in childesr repo
+      target_children_ids <- participants_df %>%
+        filter(corpus_name %in% input$corpus,
+               name %in% input$children_to_plot) %>%
+        pull(target_child_id)
+      
+      participants_df %>%
+        filter(target_child_id %in% target_children_ids,
+               corpus_name %in% input$corpus,
+               !is.na(role)) %>%
+        pull(role) %>%
+        unique
     }
-    
-    roles <- unique(pdf$role)
-    
-    return(roles)
   })
   
   # AGE MIN AND MAX FROM DATA
@@ -104,10 +64,12 @@ server <- function(input, output, session) {
   
   # DATA
   data <- reactive({
-    get_utterances(collection = input$collection, 
-                   corpus = input$corpus,
-                   child = input$child_to_plot, 
-                   role = input$role_to_plot)
+    if (!is.null(input$collection) &
+        !is.null(input$corpus)) {
+      get_utterances(collection = input$collection, 
+                     corpus = input$corpus,
+                     child = input$children_to_plot)
+    }
   })
   
   # WORDS IN DATA
