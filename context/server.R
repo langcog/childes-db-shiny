@@ -128,6 +128,8 @@ server <- function(input, output, session) {
   # COMPUTE CONTEXTS
   contexts <- reactive({
     req(input$roles_to_plot)
+    req(input$word)
+    req(data())
     
     data() %>%
       select(gloss, speaker_role) %>%
@@ -147,7 +149,7 @@ server <- function(input, output, session) {
     req(contexts())
     
     ggplot(top_n(contexts(), 
-                 min(c(20), nrow(contexts())), 
+                 20, 
                  wt = n), 
            aes(x = context,
                y = n)) +
