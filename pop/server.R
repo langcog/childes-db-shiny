@@ -1,9 +1,3 @@
-
-DAYS_PER_YEAR <- 365.25
-DAYS_PER_MONTH <- DAYS_PER_YEAR / 12
-MONTHS_PER_YEAR <- 12
-
-# MAIN SHINY SERVER
 server <- function(input, output, session) {
   
   # --------------------- DATA FOR SELECTORS ---------------------

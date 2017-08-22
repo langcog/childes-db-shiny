@@ -1,4 +1,3 @@
-# MAIN SHINY SERVER
 server <- function(input, output, session) {
   
   # --------------------- DATA FOR SELECTORS ---------------------
