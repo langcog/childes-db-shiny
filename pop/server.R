@@ -54,12 +54,10 @@ server <- function(input, output, session) {
   data <- eventReactive(input$goButton, {
     req(input$children_to_plot)
     
-    if (!is.null(input$collection) &
-        !is.null(input$corpus)) {
-      get_utterances(collection = input$collection, 
-                     corpus = input$corpus,
-                     child = input$children_to_plot)
-    }
+    print("data loading")
+    get_utterances(collection = input$collection, 
+                   corpus = input$corpus,
+                   child = input$children_to_plot)
   })
   
   # AGE MIN AND MAX FROM DATA
@@ -122,7 +120,7 @@ server <- function(input, output, session) {
                 step=.25, min=floor(age_min()), max=ceiling(age_max()))
   })
   
-  # --------------------- COMPUTATION OF MLUS ---------------------
+  # --------------------- COMPUTATION OF POPULATION STATS ---------------------
   
   
   # COMPUTE MLUS
@@ -135,7 +133,7 @@ server <- function(input, output, session) {
     #          target_child_age <= input$age_range[2] * DAYS_PER_YEAR) 
     
     if(input$age_binwidth > 0) {
-     filtered_data %<>%
+      filtered_data %<>%
         mutate(age_mo = target_child_age / DAYS_PER_MONTH, 
                age_mo_binned = floor(age_mo / input$age_binwidth) * input$age_binwidth, 
                age_y = (age_mo_binned + input$age_binwidth/2)/ MONTHS_PER_YEAR) 
@@ -149,6 +147,8 @@ server <- function(input, output, session) {
       group_by(target_child_name, age_y) %>%
       summarise(n_utts = n(), 
                 n_words = sum(length)) 
+    
+    print("computed")
     
     if (input$measure == "Utterances") {
       pop_data %>%
@@ -165,17 +165,16 @@ server <- function(input, output, session) {
   # TRAJECTORY
   output$pop_plot <- renderPlot({
     req(pop_data())
-    req(input$age_range)
     
     p <- ggplot(pop_data(), 
-           aes(x = age_y,
-               y = n, 
-               col = target_child_name)) +
+                aes(x = age_y,
+                    y = n, 
+                    col = target_child_name)) +
       geom_point() +
       geom_smooth(se=FALSE, method = "loess", span=1) + 
       xlab("Target Child Age (years)") + 
       ylim(0, max(pop_data()$n)) +
-      xlim(input$age_range[1], input$age_range[2]) +
+      # xlim(input$age_range[1], input$age_range[2]) +
       scale_colour_solarized(name = "Speaker Role") + 
       scale_size_continuous(name = "Number of Utterances") + 
       theme_few() +
