@@ -6,10 +6,10 @@ ui <- fluidPage(
   theme = shinytheme("spacelab"),
   
   bsCollapse(id = "doc", open = "title",
-    bsCollapsePanel(title = h3("Context Browser"),
-                    includeMarkdown("../docs/context-description.md"),
-                    value = "title",
-                    style = "default")
+             bsCollapsePanel(title = h3("Context Browser"),
+                             includeMarkdown("../docs/context-description.md"),
+                             value = "title",
+                             style = "default")
   ),
   
   sidebarLayout(

@@ -85,7 +85,6 @@ server <- function(input, output, session) {
       pull(word)
   })
   
-  
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
   
   # SELECTOR FOR CORPORA
@@ -145,7 +144,7 @@ server <- function(input, output, session) {
   
   # TRAJECTORY
   output$context_plot <- renderPlot({
-    req(data())
+    req(contexts())
     
     ggplot(top_n(contexts(), 
                  min(c(20), nrow(contexts())), 
