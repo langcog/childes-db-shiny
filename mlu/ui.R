@@ -1,7 +1,3 @@
-library(shiny)
-library(shinyBS)
-library(shinythemes)
-
 ui <- fluidPage(
   theme = shinytheme("spacelab"),
   

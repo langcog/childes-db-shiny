@@ -2,8 +2,9 @@
 # This is the global for all of the shiny apps in childes-db. 
 
 # --------------------- LIBRARIES ---------------------
-
 library(shiny)
+library(shinyBS)
+library(shinythemes)
 library(tidyverse)
 library(feather)
 library(ggthemes)

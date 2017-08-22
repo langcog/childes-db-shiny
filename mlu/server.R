@@ -70,7 +70,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # --------------------- UI ELEMENTS ---------------------
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
   
@@ -99,15 +98,6 @@ server <- function(input, output, session) {
                    choices = roles(), 
                    selected = "Target_Child", 
                    multiple = TRUE)
-  })
-  
-  # WORD SELECTOR
-  output$word_selector <- renderUI({
-    selectizeInput("word", 
-                   label = "Word", 
-                   selected = all_words()[1],
-                   choices = all_words(), 
-                   multiple = FALSE)
   })
   
   # SLIDER FOR AGE RANGE
@@ -150,7 +140,6 @@ server <- function(input, output, session) {
   })
   
   # --------------------- DISPLAY ---------------------
-  
   
   # TRAJECTORY
   output$trajectory_plot <- renderPlot({

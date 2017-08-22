@@ -1,26 +1,32 @@
-library(shiny)
-library(shinyBS)
-library(shinythemes)
-
 ui <- fluidPage(
   theme = shinytheme("spacelab"),
   
   bsCollapse(id = "doc", open = "title",
-    bsCollapsePanel(title = h3("Frequency Counts"),
-                    includeMarkdown("../docs/freq-description.md"),
-                    value = "title",
-                    style = "default")
+             bsCollapsePanel(title = h3("Frequency Counts"),
+                             includeMarkdown("../docs/freq-description.md"),
+                             value = "title",
+                             style = "default")
   ),
   
   sidebarLayout(
     sidebarPanel(
+      selectizeInput(inputId = "collection",
+                     label = "Collection", 
+                     choices = collections,
+                     selected = "Eng-NA", 
+                     multiple = FALSE),
+      uiOutput("corpus_selector"), 
       uiOutput("children_selector"),
       uiOutput("role_selector"),
+      uiOutput("word_selector"),
+      textInput(inputId = "word", 
+                label = "Word"), 
       uiOutput("age_range"),
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
-                  value=6, step=3,
-                  min=0, max=24)
+                  value=0, step=3,
+                  min=0, max=24), 
+      actionButton(inputId = "goButton", label = "Get Data")
     ),
     
     mainPanel(
