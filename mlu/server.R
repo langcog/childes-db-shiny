@@ -58,7 +58,7 @@ server <- function(input, output, session) {
   # --------------------- ACTUAL DATA LOADING ---------------------
   
   # DATA
-  data <- eventReactive(input$goButton, {
+  data <- reactive({
     req(input$children_to_plot)
     
     if (!is.null(input$collection) &
