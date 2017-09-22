@@ -27,8 +27,7 @@ ui <- fluidPage(
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
                   value=0, step=3,
-                  min=0, max=12),
-      actionButton(inputId = "goButton", label = "Get Data")
+                  min=0, max=12)
     ),
     
     mainPanel(
