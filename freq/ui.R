@@ -20,13 +20,13 @@ ui <- fluidPage(
       uiOutput("role_selector"),
       uiOutput("word_selector"),
       textInput(inputId = "word", 
-                label = "Word"), 
+                label = "Word",
+                value = "dog"), 
       uiOutput("age_range"),
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
                   value=0, step=3,
-                  min=0, max=24), 
-      actionButton(inputId = "goButton", label = "Get Data")
+                  min=0, max=24)
     ),
     
     mainPanel(

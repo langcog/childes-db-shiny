@@ -45,11 +45,11 @@ server <- function(input, output, session) {
   # --------------------- ACTUAL DATA LOADING ---------------------
   
   # DATA
-  data <- eventReactive(input$goButton, {
+  data <- reactive({
     req(input$children_to_plot)
     
     print("data loading")
-    get_utterances(collection = input$collection, 
+    get_speaker_statistics(collection = input$collection, 
                    corpus = input$corpus,
                    child = input$children_to_plot)
   })
@@ -139,8 +139,8 @@ server <- function(input, output, session) {
     
     pop_data <- filtered_data %>%
       group_by(target_child_name, age_y) %>%
-      summarise(n_utts = n(), 
-                n_words = sum(length)) 
+      summarise(n_utts = sum(num_utterances), 
+                n_words = sum(num_tokens)) 
     
     print("computed")
     
@@ -182,5 +182,5 @@ server <- function(input, output, session) {
   })
   
   # DATA TABLE
-  output$pop_table <- renderDataTable({mlus()})
+  output$pop_table <- renderDataTable({pop_data()})
 }
