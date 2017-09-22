@@ -49,35 +49,25 @@ server <- function(input, output, session) {
   age_min <- reactive({
     req(input$children_to_plot)
     
-    ifelse(is.null(utts()$target_child_age), 1, min(utts()$target_child_age))/DAYS_PER_YEAR
+    ifelse(is.null(types()$target_child_age), 1, min(types()$target_child_age))/DAYS_PER_YEAR
   })
   
   age_max <- reactive({
     req(input$children_to_plot)
     
-    ifelse(is.null(utts()$target_child_age), 1, max(utts()$target_child_age))/DAYS_PER_YEAR
+    ifelse(is.null(types()$target_child_age), 1, max(types()$target_child_age))/DAYS_PER_YEAR
   })
   
   # --------------------- ACTUAL DATA LOADING ---------------------
   
-  # TOKENS OF THE WORD
-  tokens <- eventReactive(input$goButton, {
+  # ALL TYPES AND THEIR COUNTS FROM CHILD
+  types <- reactive({
     req(input$children_to_plot)
     req(input$word)
     
-    get_tokens(collection = input$collection, 
+    get_types(collection = input$collection, 
                corpus = input$corpus,
-               child = input$children_to_plot, 
-               token = input$word)
-  })
-  
-  # UTTERANCES FROM THAT CORPUS (FOR DENOMINATOR)
-  utts <- eventReactive(input$goButton, {
-    req(input$children_to_plot)
-    
-    get_utterances(collection = input$collection, 
-                   corpus = input$corpus,
-                   child = input$children_to_plot)
+               child = input$children_to_plot)
   })
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
@@ -117,23 +107,19 @@ server <- function(input, output, session) {
                 step=.5, min=floor(age_min()), max=ceiling(age_max()))
   })
   
-  # --------------------- COMPUTATION OF MLUS ---------------------
+  # --------------------- COMPUTATION OF FREQSs ---------------------
   
-  # COMPUTE MLUS
+  # COMPUTE FREQS
   freqs <- reactive({
     req(input$roles_to_plot)
     req(input$age_range)
-    req(tokens())
-    req(utts())
+    req(types())
     
     print("computing")
-    filtered_data <- left_join(tokens() %>%
-                                 group_by(target_child_name, transcript_id, speaker_role, 
-                                          target_child_age) %>%
-                                 count(),
-                               utts() %>%
-                                 group_by(target_child_name, transcript_id, speaker_role) %>%
-                                 summarise(tokens = sum(length))) %>%
+    filtered_data <- types() %>%
+      group_by(target_child_name, transcript_id, speaker_role, target_child_age) %>%
+      summarise(n = sum(count[gloss == input$word]), tokens = sum(count)) %>% 
+      filter(n != 0) %>%
       mutate(ppm = 1e6 * n / tokens)  %>%
       filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
              target_child_age <= input$age_range[2] * DAYS_PER_YEAR,
@@ -177,4 +163,4 @@ server <- function(input, output, session) {
   })
   
   # DATA TABLE
-  output$trajectory_table <- renderDataTable({mlus()})}
+  output$trajectory_table <- renderDataTable({freqs()})}
