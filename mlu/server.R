@@ -63,9 +63,9 @@ server <- function(input, output, session) {
     
     if (!is.null(input$collection) &
         !is.null(input$corpus)) {
-      get_utterances(collection = input$collection, 
-                     corpus = input$corpus,
-                     child = input$children_to_plot)
+      get_speaker_statistics(collection = input$collection,
+                             corpus = input$corpus,
+                             child = input$children_to_plot)
     }
   })
   
@@ -134,8 +134,8 @@ server <- function(input, output, session) {
     
     filtered_data %>%
       group_by(target_child_name, speaker_role, age_y) %>%
-      summarise(mlu = signif(mean(length), digits = 2),
-                n = n()) 
+      summarise(mlu = signif(mean(mlu), digits = 2),
+                n = sum(num_utterances)) 
   })
   
   # --------------------- DISPLAY ---------------------
