@@ -24,8 +24,8 @@ MIN_N_FOR_BIGRAMS <- 50
 # --------------------- SHARED DATA LOADING ---------------------
 
 # CHILDES DATA
-collections_df <- get_collections() %>% tbl_df() 
+collections_df <- get_collections() %>% tbl_df()
 corpora_df <- get_corpora() %>% tbl_df()
-participants_df <- get_participants() %>% 
+participants_df <- get_participants() %>%
   tbl_df()
 collections <- collections_df$collection_name

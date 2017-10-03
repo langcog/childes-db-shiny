@@ -64,10 +64,10 @@ server <- function(input, output, session) {
     req(input$children_to_plot)
     req(input$word)
     
-    get_types(collection = input$collection,
-                   corpus = if(input$corpus == "All") NULL else input$corpus,
-                   child = if(input$children_to_plot == "All") NULL else input$children_to_plot,
-                   type = input$word)
+    get_types(collection = input$collection, 
+              corpus = if(input$corpus == "All") NULL else input$corpus,
+              child = if(input$children_to_plot == "All") NULL else input$children_to_plot,
+              type = input$word)
     
     
   })
@@ -123,15 +123,27 @@ server <- function(input, output, session) {
   freqs <- reactive({
     req(input$roles_to_plot)
     req(input$age_range)
+    req(input$children_to_plot)
     req(types())
     req(speaker_stats())
     
+    # TODO use quosures
+    
+    if(input$children_to_plot == "All") {
+      group_by_data <- types() %>%
+        group_by(speaker_role, target_child_age) %>%
+        summarise(n = sum(count))
+    } else {
+      group_by_data <- types() %>% 
+        group_by(target_child_name, speaker_role, target_child_age) %>%
+        summarise(n = sum(count))
+    }
+    
     print("computing")
-    filtered_data <- inner_join(types() %>%
-                                 group_by(target_child_name, transcript_id, 
-                                          speaker_role, target_child_age) %>%
-                                 summarise(n = sum(count)), 
-                               speaker_stats()) %>%
+    filtered_data <- inner_join(group_by_data, 
+                               speaker_stats() %>%
+                                 group_by(speaker_role, target_child_age) %>%
+                                 summarise(num_tokens = sum(num_tokens))) %>%
       mutate(ppm = 1e6 * n / num_tokens)  %>%
       filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
              target_child_age <= input$age_range[2] * DAYS_PER_YEAR,
@@ -148,9 +160,15 @@ server <- function(input, output, session) {
                age_y = age_mo / MONTHS_PER_YEAR) 
     }
     
-    filtered_data %>%
-      group_by(target_child_name, speaker_role, age_y) %>%
-      summarise(ppm = signif(mean(ppm), digits = 2)) 
+    if(input$children_to_plot == "All") {
+      filtered_data %>%
+        group_by(speaker_role, age_y) %>%
+        summarise(ppm = signif(mean(ppm), digits = 2)) 
+    } else {
+      filtered_data %>%
+        group_by(target_child_name, speaker_role, age_y) %>%
+        summarise(ppm = signif(mean(ppm), digits = 2)) 
+    }
   })
   
   # --------------------- DISPLAY ---------------------
@@ -168,7 +186,7 @@ server <- function(input, output, session) {
       ylab("Frequency (parts per million words)") + 
       xlab("Target Child Age (years)") + 
       xlim(input$age_range[1], input$age_range[2]) +
-      scale_y_continuous(limits = c(0, 50000)) +
+      scale_y_continuous(limits = c(0, 20000)) +
       scale_colour_solarized(name = "Speaker Role") + 
       theme_few() +
       theme(legend.position = "bottom") 
