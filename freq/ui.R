@@ -25,7 +25,7 @@ ui <- fluidPage(
       uiOutput("age_range"),
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
-                  value=0, step=3,
+                  value=0, step=2,
                   min=0, max=24)
     ),
     
