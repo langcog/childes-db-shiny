@@ -147,19 +147,24 @@ server <- function(input, output, session) {
   output$trajectory_plot <- renderPlot({
     req(freqs())
     
-    ggplot(freqs(), 
+    p <- ggplot(freqs(), 
            aes(x = age_y,
                y = ppm,
                col = speaker_role)) +
       geom_point() +
       geom_smooth(se=FALSE, method = "loess", span=1) + 
-      facet_wrap(~target_child_name) +
       ylab("Frequency (parts per million words)") + 
       xlab("Target Child Age (years)") + 
       xlim(input$age_range[1], input$age_range[2]) +
       scale_colour_solarized(name = "Speaker Role") + 
       theme_few() +
       theme(legend.position = "bottom") 
+    
+    if (nrow(freqs()) != 0) {
+      p <- p + facet_wrap(~target_child_name)
+    }
+    
+    p
   })
   
   # DATA TABLE

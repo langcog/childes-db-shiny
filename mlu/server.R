@@ -144,13 +144,15 @@ server <- function(input, output, session) {
   output$trajectory_plot <- renderPlot({
     req(mlus())
     
-    ggplot(mlus(), 
+    print("HI")
+    print(colnames(mlus()))
+    
+    p <- ggplot(mlus(), 
            aes(x = age_y,
                y = mlu, 
                col = speaker_role)) +
       geom_point(aes(size = n)) +
       geom_smooth(se=FALSE, method = "loess", span=1) + 
-      facet_wrap(~target_child_name) +
       ylab("Mean Length of Utterance") + 
       xlab("Target Child Age (years)") + 
       ylim(0, ceiling(max(mlus()$mlu))) +
@@ -158,7 +160,13 @@ server <- function(input, output, session) {
       scale_colour_solarized(name = "Speaker Role") + 
       scale_size_continuous(name = "Number of Utterances") + 
       theme_few() +
-      theme(legend.position = "bottom") 
+      theme(legend.position = "bottom")
+    
+    if (nrow(mlus()) != 0) {
+      p <- p + facet_wrap(~target_child_name)
+    }
+    
+    p
   })
   
   # DATA TABLE
