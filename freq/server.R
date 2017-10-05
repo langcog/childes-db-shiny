@@ -27,6 +27,8 @@ server <- function(input, output, session) {
       append("All", after = 0)
   })
   
+  collections <- append(collections, "All", after = 0)
+  
   # ROLES USED IN DATA
   # note, other matches are by ID but roles are duplicated across corpora and so 
   # we want to match e.g. all "Mother"s
@@ -64,7 +66,7 @@ server <- function(input, output, session) {
     req(input$children_to_plot)
     req(input$word)
     
-    get_types(collection = input$collection, 
+    get_types(collection = if(input$collection == "All") NULL else input$collection, 
               corpus = if(input$corpus == "All") NULL else input$corpus,
               child = if(input$children_to_plot == "All") NULL else input$children_to_plot,
               type = input$word)
@@ -75,7 +77,7 @@ server <- function(input, output, session) {
   speaker_stats <- reactive({
     req(input$children_to_plot)
     
-    get_speaker_statistics(collection = input$collection,
+    get_speaker_statistics(collection = if(input$collection == "All") NULL else input$collection,
                            corpus = if (input$corpus == "All") NULL else input$corpus,
                            child = if (input$children_to_plot == "All") NULL else input$children_to_plot)
   })
@@ -114,7 +116,7 @@ server <- function(input, output, session) {
     sliderInput("age_range", 
                 label="Ages to include (years)", 
                 value=c(age_min, age_max), 
-                step=.5, min=floor(age_min()), max=ceiling(age_max()))
+                step=.5, min=floor(age_min()), max=15)#ceiling(age_max()))
   })
   
   # --------------------- COMPUTATION OF FREQSs ---------------------
@@ -177,25 +179,27 @@ server <- function(input, output, session) {
   output$trajectory_plot <- renderPlot({
     req(freqs())
     
-    output_plot <- ggplot(freqs(), 
+    p <- ggplot(freqs() %>%
+                  filter(age_y < 15), 
            aes(x = age_y,
                y = ppm,
                col = speaker_role)) +
       geom_point() +
-      geom_smooth(se=FALSE, method = "loess", span=1) + 
+      geom_line() +
+      #geom_smooth(se=FALSE, method = "loess", span=1) + 
       ylab("Frequency (parts per million words)") + 
       xlab("Target Child Age (years)") + 
-      xlim(input$age_range[1], input$age_range[2]) +
-      scale_y_continuous(limits = c(0, 20000)) +
+      #xlim(input$age_range[1], input$age_range[2]) +
+      #scale_y_continuous(limits = c(0, 20000)) +
       scale_colour_solarized(name = "Speaker Role") + 
       theme_few() +
       theme(legend.position = "bottom") 
     
-    if (input$children_to_plot != "All") {
-      output_plot = output_plot + facet_wrap(~target_child_name)
+    if (nrow(freqs()) != 0 && input$children_to_plot != "All") {
+      p <- p + facet_wrap(~target_child_name)
     }
-
-    output_plot
+    
+    p
   })
   
   # DATA TABLE
