@@ -12,8 +12,8 @@ ui <- fluidPage(
     sidebarPanel(
       selectizeInput(inputId = "collection",
                      label = "Collection", 
-                     choices = collections,
-                     selected = "Eng-NA", 
+                     choices = append(collections, "All", after = 0),
+                     selected = "All", 
                      multiple = FALSE),
       uiOutput("corpus_selector"), 
       uiOutput("children_selector"),
@@ -21,7 +21,7 @@ ui <- fluidPage(
       uiOutput("age_range"),
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
-                  value=0, step=2,
+                  value=2, step=2,
                   min=0, max=24)
     ),
     

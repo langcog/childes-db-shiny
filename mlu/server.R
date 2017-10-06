@@ -6,20 +6,34 @@ server <- function(input, output, session) {
   corpora <- reactive({
     req(input$collection)
     
-    corpora_df %>%
-      filter(collection_name == input$collection) %>%
-      pull(corpus_name)
+    if ("All" %in% input$collection) {
+      result <- corpora_df
+    } else {
+      result <- corpora_df %>%
+        filter(collection_name == input$collection)
+    }
+    
+    result %>%
+      pull(corpus_name) %>%
+      append("All", after = 0)
   })
   
   # CHILDREN IN CORPUS
   children <- reactive({
     req(input$corpus)
     
-    participants_df %>%
-      filter(corpus_name %in% input$corpus, 
-             role == "Target_Child", 
+    if ("All" %in% input$corpus) {
+      result <- participants_df
+    } else {
+      result <- participants_df %>%
+        filter(corpus_name %in% input$corpus)
+    }
+    
+    result %>%
+      filter(role == "Target_Child", 
              !is.na(name)) %>%
-      pull(name)
+      pull(name) %>%
+      append("All", after = 0)
   })
   
   # ROLES USED IN DATA
@@ -28,31 +42,28 @@ server <- function(input, output, session) {
   roles <- reactive({
     req(input$children_to_plot)
     
-    # workaround related to issue #6 in childesr repo
-    target_children_ids <- participants_df %>%
-      filter(corpus_name %in% input$corpus,
-             name %in% input$children_to_plot) %>%
-      pull(target_child_id)
-    
-    participants_df %>%
-      filter(target_child_id %in% target_children_ids,
-             corpus_name %in% input$corpus,
-             !is.na(role)) %>%
-      pull(role) %>%
-      unique
+    data()$speaker_role %>%
+      unique %>%
+      na.omit
   })
   
   # AGE MIN AND MAX FROM DATA
   age_min <- reactive({
     req(input$children_to_plot)
     
-    ifelse(is.null(data()$target_child_age), 1, min(data()$target_child_age))/DAYS_PER_YEAR
+    ages_in_days <- data()$target_child_age %>%
+      na.omit()
+    
+    ifelse(is.null(ages_in_days), 1, min(ages_in_days))/DAYS_PER_YEAR
   })
   
   age_max <- reactive({
     req(input$children_to_plot)
     
-    ifelse(is.null(data()$target_child_age), 1, max(data()$target_child_age))/DAYS_PER_YEAR
+    ages_in_days <- data()$target_child_age %>%
+      na.omit()
+    
+    ifelse(is.null(ages_in_days), 1, max(ages_in_days))/DAYS_PER_YEAR
   })
   
   # --------------------- ACTUAL DATA LOADING ---------------------
@@ -63,9 +74,9 @@ server <- function(input, output, session) {
     
     if (!is.null(input$collection) &
         !is.null(input$corpus)) {
-      get_speaker_statistics(collection = input$collection,
-                             corpus = input$corpus,
-                             child = input$children_to_plot)
+      get_speaker_statistics(collection = if("All" %in% input$collection) NULL else input$collection, 
+                             corpus = if("All" %in% input$corpus) NULL else input$corpus,
+                             child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot)
     }
   })
   
@@ -101,10 +112,10 @@ server <- function(input, output, session) {
   
   # SLIDER FOR AGE RANGE
   output$age_range <- renderUI({
-    sliderInput("age_range", 
-                label="Ages to include (years)", 
-                value=c(age_min, age_max), 
-                step=.5, min=floor(age_min()), max=ceiling(age_max()))
+      sliderInput("age_range", 
+              label="Ages to include (years)", 
+              value=c(age_min, age_max), 
+              step=.5, min=floor(age_min()), max=ceiling(age_max()))
   })
   
   # --------------------- COMPUTATION OF MLUS ---------------------
@@ -115,6 +126,8 @@ server <- function(input, output, session) {
     req(input$roles_to_plot)
     req(input$age_range)
     req(data())
+    
+    print(data())
     
     filtered_data <- data() %>%
       filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
@@ -132,10 +145,17 @@ server <- function(input, output, session) {
                age_y = age_mo / MONTHS_PER_YEAR) 
     }
     
-    filtered_data %>%
-      group_by(target_child_name, speaker_role, age_y) %>%
-      summarise(mlu = signif(mean(mlu), digits = 2),
-                n = sum(num_utterances)) 
+    if("All" %in% input$children_to_plot) {
+      filtered_data %>%
+        group_by(speaker_role, age_y) %>%
+        summarise(mlu = signif(mean(mlu), digits = 2),
+                  n = sum(num_utterances)) 
+    } else {
+      filtered_data %>%
+        group_by(target_child_name, speaker_role, age_y) %>%
+        summarise(mlu = signif(mean(mlu), digits = 2),
+                  n = sum(num_utterances)) 
+    }
   })
   
   # --------------------- DISPLAY ---------------------
@@ -143,9 +163,6 @@ server <- function(input, output, session) {
   # TRAJECTORY
   output$trajectory_plot <- renderPlot({
     req(mlus())
-    
-    print("HI")
-    print(colnames(mlus()))
     
     p <- ggplot(mlus(), 
            aes(x = age_y,
@@ -162,7 +179,7 @@ server <- function(input, output, session) {
       theme_few() +
       theme(legend.position = "bottom")
     
-    if (nrow(mlus()) != 0) {
+    if (nrow(mlus()) != 0 && !"All" %in% input$children_to_plot) {
       p <- p + facet_wrap(~target_child_name)
     }
     

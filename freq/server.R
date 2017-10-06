@@ -24,15 +24,15 @@ server <- function(input, output, session) {
   # CHILDREN IN CORPUS
   children <- reactive({
     req(input$corpus)
-    
-    print(input$corpus)
-
+  
     if ("All" %in% input$corpus) {
       result <- participants_df
     } else {
       result <- participants_df %>%
         filter(corpus_name %in% input$corpus)
     }
+    
+    print(unique(result$name))
     
     result %>%
       filter(role == "Target_Child", 
