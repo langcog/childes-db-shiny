@@ -12,7 +12,7 @@ ui <- fluidPage(
     sidebarPanel(
       selectizeInput(inputId = "collection",
                      label = "Collection", 
-                     choices = append(collections, "All"),
+                     choices = append(collections, "All", after = 0),
                      selected = "All", 
                      multiple = FALSE),
       uiOutput("corpus_selector"), 
@@ -21,11 +21,11 @@ ui <- fluidPage(
       uiOutput("word_selector"),
       textInput(inputId = "word", 
                 label = "Word",
-                value = "the"), 
+                value = "dog"), 
       uiOutput("age_range"),
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
-                  value=0, step=3,
+                  value=3, step=3,
                   min=0, max=24)
     ),
     

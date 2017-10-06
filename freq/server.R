@@ -9,8 +9,14 @@ server <- function(input, output, session) {
   corpora <- reactive({
     req(input$collection)
     
-    corpora_df %>%
-      filter(collection_name == input$collection) %>%
+    if ("All" %in% input$collection) {
+      result <- corpora_df
+    } else {
+      result <- corpora_df %>%
+        filter(collection_name == input$collection)
+    }
+    
+    result %>%
       pull(corpus_name) %>%
       append("All", after = 0)
   })
@@ -19,15 +25,23 @@ server <- function(input, output, session) {
   children <- reactive({
     req(input$corpus)
     
-    participants_df %>%
-      filter(corpus_name %in% input$corpus, 
-             role == "Target_Child", 
+    print(input$corpus)
+
+    if ("All" %in% input$corpus) {
+      result <- participants_df
+    } else {
+      result <- participants_df %>%
+        filter(corpus_name %in% input$corpus)
+    }
+    
+    result %>%
+      filter(role == "Target_Child", 
              !is.na(name)) %>%
       pull(name) %>%
       append("All", after = 0)
   })
   
-  collections <- append(collections, "All", after = 0)
+  # collections <- append(collections, "All", after = 0)
   
   # ROLES USED IN DATA
   # note, other matches are by ID but roles are duplicated across corpora and so 
@@ -66,9 +80,11 @@ server <- function(input, output, session) {
     req(input$children_to_plot)
     req(input$word)
     
-    get_types(collection = if(input$collection == "All") NULL else input$collection, 
-              corpus = if(input$corpus == "All") NULL else input$corpus,
-              child = if(input$children_to_plot == "All") NULL else input$children_to_plot,
+    print(input$children_to_plot)
+    
+    get_types(collection = if("All" %in% input$collection) NULL else input$collection, 
+              corpus = if("All" %in% input$corpus) NULL else input$corpus,
+              child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot,
               type = input$word)
     
     
@@ -77,9 +93,9 @@ server <- function(input, output, session) {
   speaker_stats <- reactive({
     req(input$children_to_plot)
     
-    get_speaker_statistics(collection = if(input$collection == "All") NULL else input$collection,
-                           corpus = if (input$corpus == "All") NULL else input$corpus,
-                           child = if (input$children_to_plot == "All") NULL else input$children_to_plot)
+    get_speaker_statistics(collection = if("All" %in% input$collection) NULL else input$collection,
+                           corpus = if ("All" %in% input$corpus) NULL else input$corpus,
+                           child = if ("All" %in% input$children_to_plot) NULL else input$children_to_plot)
   })
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
@@ -116,7 +132,7 @@ server <- function(input, output, session) {
     sliderInput("age_range", 
                 label="Ages to include (years)", 
                 value=c(age_min, age_max), 
-                step=.5, min=floor(age_min()), max=15)#ceiling(age_max()))
+                step=.5, min=floor(age_min()), max=ceiling(age_max()))
   })
   
   # --------------------- COMPUTATION OF FREQSs ---------------------
@@ -131,12 +147,14 @@ server <- function(input, output, session) {
     
     # TODO use quosures
     
-    if(input$children_to_plot == "All") {
+    if("All" %in% input$children_to_plot) {
       group_by_data <- types() %>%
+        na.omit %>%
         group_by(speaker_role, target_child_age) %>%
         summarise(n = sum(count))
     } else {
       group_by_data <- types() %>% 
+        na.omit %>%
         group_by(target_child_name, speaker_role, target_child_age) %>%
         summarise(n = sum(count))
     }
@@ -162,7 +180,7 @@ server <- function(input, output, session) {
                age_y = age_mo / MONTHS_PER_YEAR) 
     }
     
-    if(input$children_to_plot == "All") {
+    if("All" %in% input$children_to_plot) {
       filtered_data %>%
         group_by(speaker_role, age_y) %>%
         summarise(ppm = signif(mean(ppm), digits = 2)) 
@@ -179,23 +197,20 @@ server <- function(input, output, session) {
   output$trajectory_plot <- renderPlot({
     req(freqs())
     
-    p <- ggplot(freqs() %>%
-                  filter(age_y < 15), 
+    p <- ggplot(freqs(), 
            aes(x = age_y,
                y = ppm,
                col = speaker_role)) +
       geom_point() +
-      geom_line() +
-      #geom_smooth(se=FALSE, method = "loess", span=1) + 
+      geom_smooth(se=FALSE, method = "loess", span=1) + 
       ylab("Frequency (parts per million words)") + 
       xlab("Target Child Age (years)") + 
-      #xlim(input$age_range[1], input$age_range[2]) +
-      #scale_y_continuous(limits = c(0, 20000)) +
+      xlim(input$age_range[1], input$age_range[2]) +
       scale_colour_solarized(name = "Speaker Role") + 
       theme_few() +
       theme(legend.position = "bottom") 
     
-    if (nrow(freqs()) != 0 && input$children_to_plot != "All") {
+    if (nrow(freqs()) != 0 && !"All" %in% input$children_to_plot) {
       p <- p + facet_wrap(~target_child_name)
     }
     
