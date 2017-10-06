@@ -30,6 +30,9 @@ ui <- fluidPage(
     ),
     
     mainPanel(
+      tags$style(type = "text/css",
+                 ".shiny-output-error { visibility: hidden; }",
+                 ".shiny-output-error:before { visibility: hidden; }"),
       tabsetPanel(selected = "Plot", 
                   tabPanel("Plot",
                            plotOutput("trajectory_plot")
