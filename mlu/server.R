@@ -160,6 +160,13 @@ server <- function(input, output, session) {
   
   # --------------------- DISPLAY ---------------------
   
+  # DOWNLOAD BUTTON
+  output$download_table <- downloadHandler(
+    filename = function() paste("mlu_table_v", version, ".csv", sep=""),
+    content = function(file) {
+      write.csv(freqs(), file, row.names = FALSE)
+    })
+  
   # TRAJECTORY
   output$trajectory_plot <- renderPlot({
     req(mlus())

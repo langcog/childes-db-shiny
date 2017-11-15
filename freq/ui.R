@@ -38,6 +38,10 @@ ui <- fluidPage(
                            plotOutput("trajectory_plot")
                   ), 
                   tabPanel("Table",
+                           br(),
+                           downloadButton("download_table", "Download Table",
+                                          class = "btn-default btn-xs"),
+                           br(), br(),
                            dataTableOutput("trajectory_table")
                   )
       )

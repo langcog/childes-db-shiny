@@ -29,3 +29,4 @@ corpora_df <- get_corpora() %>% tbl_df()
 participants_df <- get_participants() %>%
   tbl_df()
 collections <- collections_df$collection_name
+version <- get_database_version()
