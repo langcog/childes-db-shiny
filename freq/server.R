@@ -9,21 +9,39 @@ server <- function(input, output, session) {
   corpora <- reactive({
     req(input$collection)
     
-    corpora_df %>%
-      filter(collection_name == input$collection) %>%
-      pull(corpus_name)
+    if ("All" %in% input$collection) {
+      result <- corpora_df
+    } else {
+      result <- corpora_df %>%
+        filter(collection_name == input$collection)
+    }
+    
+    result %>%
+      pull(corpus_name) %>%
+      append("All", after = 0)
   })
   
   # CHILDREN IN CORPUS
   children <- reactive({
     req(input$corpus)
+  
+    if ("All" %in% input$corpus) {
+      result <- participants_df
+    } else {
+      result <- participants_df %>%
+        filter(corpus_name %in% input$corpus)
+    }
     
-    participants_df %>%
-      filter(corpus_name %in% input$corpus, 
-             role == "Target_Child", 
+    print(unique(result$name))
+    
+    result %>%
+      filter(role == "Target_Child", 
              !is.na(name)) %>%
-      pull(name)
+      pull(name) %>%
+      append("All", after = 0)
   })
+  
+  # collections <- append(collections, "All", after = 0)
   
   # ROLES USED IN DATA
   # note, other matches are by ID but roles are duplicated across corpora and so 
@@ -31,31 +49,28 @@ server <- function(input, output, session) {
   roles <- reactive({
     req(input$children_to_plot)
     
-    # workaround related to issue #6 in childesr repo
-    target_children_ids <- participants_df %>%
-      filter(corpus_name %in% input$corpus,
-             name %in% input$children_to_plot) %>%
-      pull(target_child_id)
-    
-    participants_df %>%
-      filter(target_child_id %in% target_children_ids,
-             corpus_name %in% input$corpus,
-             !is.na(role)) %>%
-      pull(role) %>%
-      unique
+    speaker_stats()$speaker_role %>%
+      unique %>%
+      na.omit
   })
   
   # AGE MIN AND MAX FROM DATA
   age_min <- reactive({
     req(input$children_to_plot)
     
-    ifelse(is.null(types()$target_child_age), 1, min(types()$target_child_age))/DAYS_PER_YEAR
+    ages_in_days <- types()$target_child_age %>%
+      na.omit()
+    
+    ifelse(is.null(ages_in_days), 1, min(ages_in_days))/DAYS_PER_YEAR
   })
   
   age_max <- reactive({
     req(input$children_to_plot)
     
-    ifelse(is.null(types()$target_child_age), 1, max(types()$target_child_age))/DAYS_PER_YEAR
+    ages_in_days <- types()$target_child_age %>%
+      na.omit()
+    
+    ifelse(is.null(ages_in_days), 1, max(ages_in_days))/DAYS_PER_YEAR
   })
   
   # --------------------- ACTUAL DATA LOADING ---------------------
@@ -65,9 +80,22 @@ server <- function(input, output, session) {
     req(input$children_to_plot)
     req(input$word)
     
-    get_types(collection = input$collection, 
-               corpus = input$corpus,
-               child = input$children_to_plot)
+    print(input$children_to_plot)
+    
+    get_types(collection = if("All" %in% input$collection) NULL else input$collection, 
+              corpus = if("All" %in% input$corpus) NULL else input$corpus,
+              child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot,
+              type = input$word)
+    
+    
+  })
+  
+  speaker_stats <- reactive({
+    req(input$children_to_plot)
+    
+    get_speaker_statistics(collection = if("All" %in% input$collection) NULL else input$collection,
+                           corpus = if ("All" %in% input$corpus) NULL else input$corpus,
+                           child = if ("All" %in% input$children_to_plot) NULL else input$children_to_plot)
   })
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
@@ -113,14 +141,30 @@ server <- function(input, output, session) {
   freqs <- reactive({
     req(input$roles_to_plot)
     req(input$age_range)
+    req(input$children_to_plot)
     req(types())
+    req(speaker_stats())
+    
+    # TODO use quosures
+    
+    if("All" %in% input$children_to_plot) {
+      group_by_data <- types() %>%
+        na.omit %>%
+        group_by(speaker_role, target_child_age) %>%
+        summarise(n = sum(count))
+    } else {
+      group_by_data <- types() %>% 
+        na.omit %>%
+        group_by(target_child_name, speaker_role, target_child_age) %>%
+        summarise(n = sum(count))
+    }
     
     print("computing")
-    filtered_data <- types() %>%
-      group_by(target_child_name, transcript_id, speaker_role, target_child_age) %>%
-      summarise(n = sum(count[gloss == input$word]), tokens = sum(count)) %>% 
-      filter(n != 0) %>%
-      mutate(ppm = 1e6 * n / tokens)  %>%
+    filtered_data <- inner_join(group_by_data, 
+                               speaker_stats() %>%
+                                 group_by(speaker_role, target_child_age) %>%
+                                 summarise(num_tokens = sum(num_tokens))) %>%
+      mutate(ppm = 1e6 * n / num_tokens)  %>%
       filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
              target_child_age <= input$age_range[2] * DAYS_PER_YEAR,
              speaker_role %in% input$roles_to_plot)
@@ -136,9 +180,15 @@ server <- function(input, output, session) {
                age_y = age_mo / MONTHS_PER_YEAR) 
     }
     
-    filtered_data %>%
-      group_by(target_child_name, speaker_role, age_y) %>%
-      summarise(ppm = signif(mean(ppm), digits = 2)) 
+    if("All" %in% input$children_to_plot) {
+      filtered_data %>%
+        group_by(speaker_role, age_y) %>%
+        summarise(ppm = signif(mean(ppm), digits = 2)) 
+    } else {
+      filtered_data %>%
+        group_by(target_child_name, speaker_role, age_y) %>%
+        summarise(ppm = signif(mean(ppm), digits = 2)) 
+    }
   })
   
   # --------------------- DISPLAY ---------------------
@@ -160,7 +210,7 @@ server <- function(input, output, session) {
       theme_few() +
       theme(legend.position = "bottom") 
     
-    if (nrow(freqs()) != 0) {
+    if (nrow(freqs()) != 0 && !"All" %in% input$children_to_plot) {
       p <- p + facet_wrap(~target_child_name)
     }
     
