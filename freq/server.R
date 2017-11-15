@@ -149,12 +149,12 @@ server <- function(input, output, session) {
     
     if("All" %in% input$children_to_plot) {
       group_by_data <- types() %>%
-        na.omit %>%
+        drop_na(speaker_role, target_child_age) %>%
         group_by(speaker_role, target_child_age) %>%
         summarise(n = sum(count))
     } else {
       group_by_data <- types() %>% 
-        na.omit %>%
+        drop_na(target_child_name, speaker_role, target_child_age) %>%
         group_by(target_child_name, speaker_role, target_child_age) %>%
         summarise(n = sum(count))
     }
