@@ -164,7 +164,7 @@ server <- function(input, output, session) {
   output$download_table <- downloadHandler(
     filename = function() paste("mlu_table_v", version, ".csv", sep=""),
     content = function(file) {
-      write.csv(freqs(), file, row.names = FALSE)
+      write.csv(mlus(), file, row.names = FALSE)
     })
   
   # TRAJECTORY

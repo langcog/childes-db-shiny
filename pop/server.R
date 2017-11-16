@@ -176,7 +176,7 @@ server <- function(input, output, session) {
   output$download_table <- downloadHandler(
     filename = function() paste("population_table_v", version, ".csv", sep=""),
     content = function(file) {
-      write.csv(freqs(), file, row.names = FALSE)
+      write.csv(pop_data(), file, row.names = FALSE)
     })
   
   
