@@ -32,8 +32,6 @@ server <- function(input, output, session) {
         filter(corpus_name %in% input$corpus)
     }
     
-    print(unique(result$name))
-    
     result %>%
       filter(role == "Target_Child", 
              !is.na(name)) %>%
@@ -85,8 +83,9 @@ server <- function(input, output, session) {
     get_types(collection = if("All" %in% input$collection) NULL else input$collection, 
               corpus = if("All" %in% input$corpus) NULL else input$corpus,
               child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot,
-              type = input$word)
-    
+              type = input$word %>% strsplit(split=",") %>% unlist %>% trimws) %>%
+      mutate(gloss = tolower(gloss))
+
     
   })
   
@@ -145,22 +144,25 @@ server <- function(input, output, session) {
     req(types())
     req(speaker_stats())
     
+    print("\n\n\n\n")
+    print(unique(types()$gloss))
+    
     # TODO use quosures
     
     if("All" %in% input$children_to_plot) {
       group_by_data <- types() %>%
         drop_na(speaker_role, target_child_age) %>%
-        group_by(speaker_role, target_child_age) %>%
+        group_by(gloss, speaker_role, target_child_age) %>%
         summarise(n = sum(count))
     } else {
       group_by_data <- types() %>% 
         drop_na(target_child_name, speaker_role, target_child_age) %>%
-        group_by(target_child_name, speaker_role, target_child_age) %>%
+        group_by(gloss, target_child_name, speaker_role, target_child_age) %>%
         summarise(n = sum(count))
     }
     
     print("computing")
-    filtered_data <- inner_join(group_by_data, 
+    filtered_data <- left_join(group_by_data, 
                                speaker_stats() %>%
                                  group_by(speaker_role, target_child_age) %>%
                                  summarise(num_tokens = sum(num_tokens))) %>%
@@ -182,13 +184,14 @@ server <- function(input, output, session) {
     
     if("All" %in% input$children_to_plot) {
       filtered_data %>%
-        group_by(speaker_role, age_y) %>%
+        group_by(gloss, speaker_role, age_y) %>%
         summarise(ppm = signif(mean(ppm), digits = 2)) 
     } else {
       filtered_data %>%
-        group_by(target_child_name, speaker_role, age_y) %>%
+        group_by(gloss, target_child_name, speaker_role, age_y) %>%
         summarise(ppm = signif(mean(ppm), digits = 2)) 
     }
+     
   })
   
   # --------------------- DISPLAY ---------------------
@@ -207,7 +210,7 @@ server <- function(input, output, session) {
     p <- ggplot(freqs(), 
            aes(x = age_y,
                y = ppm,
-               col = speaker_role)) +
+               col = gloss)) +
       geom_point() +
       geom_smooth(se=FALSE, method = "loess", span=1) + 
       ylab("Frequency (parts per million words)") + 
