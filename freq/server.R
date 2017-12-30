@@ -5,6 +5,7 @@ server <- function(input, output, session) {
   
   # --------------------- DATA FOR SELECTORS ---------------------
   
+  
   # CORPORA IN COLLECTION
   corpora <- reactive({
     req(input$collection)
@@ -17,25 +18,20 @@ server <- function(input, output, session) {
   
   # CHILDREN IN CORPUS
   children <- reactive({
+    req(input$collection)
     req(input$corpus)
-  
-    if ("All" %in% input$corpus) {
-      result <- participants_df
-    } else {
-      result <- participants_df %>%
-        filter(corpus_name %in% input$corpus)
+
+    result <- children_df %>%
+      filter(collection_name == input$collection)
+
+    if (!"All" %in% input$corpus) {
+      result %<>% filter(corpus_name %in% input$corpus)
     }
-    
-    print(unique(result$name))
-    
+
     result %>%
-      filter(role == "Target_Child", 
-             !is.na(name)) %>%
       pull(name) %>%
       append("All", after = 0)
   })
-  
-  # collections <- append(collections, "All", after = 0)
   
   # ROLES USED IN DATA
   # note, other matches are by ID but roles are duplicated across corpora and so 
