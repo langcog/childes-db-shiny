@@ -118,9 +118,18 @@ server <- function(input, output, session) {
   
   # SLIDER FOR AGE RANGE
   output$age_range <- renderUI({
+    # Don't adjust slider if age range has been altered by user
+    selected_min_age <- input$age_range[1]
+    selected_max_age <- input$age_range[2]
+
+    value <- c(
+      if (!is.null(selected_min_age)) selected_min_age else age_min,
+      if (!is.null(selected_max_age)) selected_max_age else age_max
+    )
+    
     sliderInput("age_range", 
                 label="Ages to include (years)", 
-                value=c(age_min, age_max), 
+                value=value, 
                 step=.5, min=floor(age_min()), max=ceiling(age_max()))
   })
   
@@ -134,7 +143,6 @@ server <- function(input, output, session) {
     req(types())
     req(speaker_stats())
     
-    print("\n\n\n\n")
     print(unique(types()$gloss))
     
     # TODO use quosures
