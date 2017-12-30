@@ -5,41 +5,33 @@ server <- function(input, output, session) {
   
   # --------------------- DATA FOR SELECTORS ---------------------
   
+  
   # CORPORA IN COLLECTION
   corpora <- reactive({
     req(input$collection)
     
-    if ("All" %in% input$collection) {
-      result <- corpora_df
-    } else {
-      result <- corpora_df %>%
-        filter(collection_name == input$collection)
-    }
-    
-    result %>%
+    corpora_df %>%
+      filter(collection_name == input$collection) %>% 
       pull(corpus_name) %>%
       append("All", after = 0)
   })
   
   # CHILDREN IN CORPUS
   children <- reactive({
+    req(input$collection)
     req(input$corpus)
-  
-    if ("All" %in% input$corpus) {
-      result <- participants_df
-    } else {
-      result <- participants_df %>%
-        filter(corpus_name %in% input$corpus)
+
+    result <- children_df %>%
+      filter(collection_name == input$collection)
+
+    if (!"All" %in% input$corpus) {
+      result %<>% filter(corpus_name %in% input$corpus)
     }
     
     result %>%
-      filter(role == "Target_Child", 
-             !is.na(name)) %>%
       pull(name) %>%
       append("All", after = 0)
   })
-  
-  # collections <- append(collections, "All", after = 0)
   
   # ROLES USED IN DATA
   # note, other matches are by ID but roles are duplicated across corpora and so 
@@ -78,9 +70,7 @@ server <- function(input, output, session) {
     req(input$children_to_plot)
     req(input$word)
     
-    print(input$children_to_plot)
-    
-    get_types(collection = if("All" %in% input$collection) NULL else input$collection, 
+    get_types(collection = input$collection, 
               corpus = if("All" %in% input$corpus) NULL else input$corpus,
               child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot,
               type = input$word %>% strsplit(split=",") %>% unlist %>% trimws) %>%
@@ -92,7 +82,7 @@ server <- function(input, output, session) {
   speaker_stats <- reactive({
     req(input$children_to_plot)
     
-    get_speaker_statistics(collection = if("All" %in% input$collection) NULL else input$collection,
+    get_speaker_statistics(collection = input$collection,
                            corpus = if ("All" %in% input$corpus) NULL else input$corpus,
                            child = if ("All" %in% input$children_to_plot) NULL else input$children_to_plot)
   })

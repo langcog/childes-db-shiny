@@ -26,7 +26,7 @@ MIN_N_FOR_BIGRAMS <- 50
 # CHILDES DATA
 collections_df <- get_collections() %>% tbl_df()
 corpora_df <- get_corpora() %>% tbl_df()
-participants_df <- get_participants() %>%
+children_df <- get_participants(role = "Target_Child") %>%
   tbl_df()
 collections <- collections_df$collection_name
 version <- '0.1.1' # get_database_version()
