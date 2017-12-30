@@ -12,8 +12,8 @@ ui <- fluidPage(
     sidebarPanel(
       selectizeInput(inputId = "collection",
                      label = "Collection", 
-                     choices = append(collections, "All", after = 0),
-                     selected = "All", 
+                     choices = collections,
+                     selected = "Eng-NA", 
                      multiple = FALSE),
       uiOutput("corpus_selector"), 
       uiOutput("children_selector"),

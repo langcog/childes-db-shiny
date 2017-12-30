@@ -6,14 +6,8 @@ server <- function(input, output, session) {
   corpora <- reactive({
     req(input$collection)
     
-    if ("All" %in% input$collection) {
-      result <- corpora_df
-    } else {
-      result <- corpora_df %>%
-        filter(collection_name == input$collection)
-    }
-    
-    result %>%
+    corpora_df %>%
+      filter(collection_name == input$collection) %>%
       pull(corpus_name) %>%
       append("All", after = 0)
   })
@@ -74,7 +68,7 @@ server <- function(input, output, session) {
     
     if (!is.null(input$collection) &
         !is.null(input$corpus)) {
-      get_speaker_statistics(collection = if("All" %in% input$collection) NULL else input$collection, 
+      get_speaker_statistics(collection = input$collection, 
                              corpus = if("All" %in% input$corpus) NULL else input$corpus,
                              child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot)
     }
@@ -126,8 +120,6 @@ server <- function(input, output, session) {
     req(input$roles_to_plot)
     req(input$age_range)
     req(data())
-    
-    print(data())
     
     filtered_data <- data() %>%
       filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
