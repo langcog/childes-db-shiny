@@ -200,13 +200,14 @@ server <- function(input, output, session) {
     p <- ggplot(freqs(), 
            aes(x = age_y,
                y = ppm,
-               col = gloss)) +
+               linetype = speaker_role,
+               color = gloss)) +
       geom_point() +
       geom_smooth(se=FALSE, method = "loess", span=1) + 
       ylab("Frequency (parts per million words)") + 
       xlab("Target Child Age (years)") + 
       xlim(input$age_range[1], input$age_range[2]) +
-      scale_colour_solarized(name = "Speaker Role") + 
+      scale_colour_solarized(name = "gloss") + 
       theme_few() +
       theme(legend.position = "bottom") 
     

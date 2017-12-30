@@ -21,7 +21,7 @@ ui <- fluidPage(
       uiOutput("word_selector"),
       textInput(inputId = "word", 
                 label = "Word",
-                value = "mom,dad"), 
+                value = "ball,the"), 
       uiOutput("age_range"),
       sliderInput("age_binwidth", 
                   label="Bin size (months)", 
