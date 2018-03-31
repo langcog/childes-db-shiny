@@ -112,6 +112,15 @@ server <- function(input, output, session) {
                    multiple = TRUE)
   })
   
+  # SELECTOR FOR MEASURES
+  output$measure_selector <- renderUI({
+    selectizeInput(inputId = "measure",
+                   label = "Measure", 
+                   choices = c("MLU-w", "TTR"),
+                   selected = "MLU-w", 
+                   multiple = FALSE)
+  })
+  
   # SLIDER FOR AGE RANGE
   output$age_range_selector <- renderUI({
       sliderInput("age_range", 
@@ -128,11 +137,11 @@ server <- function(input, output, session) {
                 min=0, max=24)
   })
   
-  # --------------------- COMPUTATION OF MLUS ---------------------
+  # --------------------- COMPUTATION OF MEASURES ---------------------
   
   
-  # COMPUTE MLUS
-  mlus <- reactive({
+  # COMPUTE MEASURES
+  measures <- reactive({
     req(input$roles_to_plot)
     req(input$age_range)
     req(data())
@@ -153,16 +162,37 @@ server <- function(input, output, session) {
                age_y = age_mo / MONTHS_PER_YEAR) 
     }
     
+    # TODO this is hard to read, use quosures?
     if("All" %in% input$children_to_plot) {
-      filtered_data %>%
-        group_by(speaker_role, age_y) %>%
-        summarise(mlu = signif(mean(mlu), digits = 2),
-                  n = sum(num_utterances)) 
+      
+      if (input$measure == "MLU-w") {
+        filtered_data %>%
+          group_by(speaker_role, age_y) %>%
+          summarise(measure = signif(mean(mlu), digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "TTR") {
+        filtered_data %>%
+          group_by(speaker_role, age_y) %>%
+          summarise(total_types = sum(num_types), total_tokens = sum(num_tokens),
+                    measure = signif(total_types / total_tokens, digits = 2),
+                    n = sum(num_utterances)) 
+      }
     } else {
-      filtered_data %>%
-        group_by(target_child_name, speaker_role, age_y) %>%
-        summarise(mlu = signif(mean(mlu), digits = 2),
-                  n = sum(num_utterances)) 
+      
+      if (input$measure == "MLU-w") {
+        filtered_data %>%
+          group_by(target_child_name, speaker_role, age_y) %>%
+          summarise(measure = signif(mean(mlu), digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "TTR") {
+        filtered_data %>%
+          group_by(speaker_role, age_y) %>%
+          summarise(total_types = sum(num_types), total_tokens = sum(num_tokens),
+                    measure = signif(total_types / total_tokens, digits = 2),
+                    n = sum(num_utterances)) 
+      }
     }
   })
   
@@ -170,31 +200,31 @@ server <- function(input, output, session) {
   
   # DOWNLOAD BUTTON
   output$download_table <- downloadHandler(
-    filename = function() paste("mlu_table_v", version, ".csv", sep=""),
+    filename = function() paste("measures_table_v", version, ".csv", sep=""),
     content = function(file) {
       write.csv(mlus(), file, row.names = FALSE)
     })
   
   # TRAJECTORY
   output$trajectory_plot <- renderPlot({
-    req(mlus())
+    req(measures())
     
-    p <- ggplot(mlus(), 
+    p <- ggplot(measures(), 
            aes(x = age_y,
-               y = mlu, 
+               y = measure, 
                col = speaker_role)) +
       geom_point(aes(size = n)) +
       geom_smooth(se=FALSE, method = "loess", span=1) + 
-      ylab("Mean Length of Utterance") + 
+      ylab(input$measure) + 
       xlab("Target Child Age (years)") + 
-      ylim(0, ceiling(max(mlus()$mlu))) +
+      ylim(0, ceiling(max(measures()$measure))) +
       xlim(input$age_range[1], input$age_range[2]) +
       scale_colour_solarized(name = "Speaker Role") + 
       scale_size_continuous(name = "Number of Utterances") + 
       theme_few() +
       theme(legend.position = "bottom")
     
-    if (nrow(mlus()) != 0 && !"All" %in% input$children_to_plot) {
+    if (nrow(measures()) != 0 && !"All" %in% input$children_to_plot) {
       p <- p + facet_wrap(~target_child_name)
     }
     
@@ -202,5 +232,5 @@ server <- function(input, output, session) {
   })
   
   # DATA TABLE
-  output$trajectory_table <- renderDataTable({mlus()})
+  output$trajectory_table <- renderDataTable({measures()})
 }

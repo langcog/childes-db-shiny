@@ -2,7 +2,7 @@ ui <- fluidPage(
   theme = shinytheme("spacelab"),
   
   bsCollapse(id = "doc", open = "title",
-             bsCollapsePanel(title = h3("Mean Length of Utterance"),
+             bsCollapsePanel(title = h3("Derived Measures"),
                              includeMarkdown("../docs/mlu-description.md"),
                              value = "title",
                              style = "default")
@@ -14,6 +14,7 @@ ui <- fluidPage(
       uiOutput("corpus_selector"), 
       uiOutput("children_selector"),
       uiOutput("role_selector"),
+      uiOutput("measure_selector"),
       uiOutput("age_range_selector"),
       uiOutput("age_binwidth_selector"),
       # Note that uiOutputs are necessary for bookmark to work
