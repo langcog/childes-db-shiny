@@ -10,24 +10,14 @@ ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
-      selectizeInput(inputId = "collection",
-                     label = "Collection", 
-                     choices = collections,
-                     selected = "Eng-NA", 
-                     multiple = FALSE),
+      uiOutput("collection_selector"),
       uiOutput("corpus_selector"), 
       uiOutput("children_selector"),
       uiOutput("role_selector"),
-      selectizeInput(inputId = "measure",
-                     label = "Measure", 
-                     choices = c("Utterances", "Tokens (Words)"), 
-                     selected = "Utterances", 
-                     multiple = FALSE),
-      # uiOutput("age_range"),
-      sliderInput("age_binwidth", 
-                  label="Bin size (months)", 
-                  value=2, step=2,
-                  min=0, max=12)
+      uiOutput("measure_selector"),
+      uiOutput("age_binwidth_selector"),
+      # Note that uiOutputs are necessary for bookmark to work
+      bookmarkButton()
     ),
     
     mainPanel(

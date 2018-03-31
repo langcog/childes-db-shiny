@@ -30,3 +30,7 @@ children_df <- get_participants(role = "Target_Child") %>%
   tbl_df()
 collections <- collections_df$collection_name
 version <- '0.1.1' # get_database_version()
+
+# --------------------- ENABLE BOOKMARKING ---------------------
+# Note: input elements must be generated in server.r for this to work
+enableBookmarking(store = "url")

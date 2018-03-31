@@ -89,6 +89,15 @@ server <- function(input, output, session) {
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
   
+  # SELECTOR FOR COLLECTION
+  output$collection_selector <- renderUI({
+    selectizeInput(inputId = "collection",
+                   label = "Collection", 
+                   choices = collections,
+                   selected = "Eng-NA",
+                   multiple = FALSE)
+  })
+  
   # SELECTOR FOR CORPORA
   output$corpus_selector <- renderUI({
     selectizeInput(inputId = "corpus",
@@ -112,12 +121,20 @@ server <- function(input, output, session) {
     selectizeInput(inputId = "roles_to_plot",
                    label = "Speakers", 
                    choices = roles(), 
-                   selected = "Target_Child", 
+                   selected = roles()[1], 
                    multiple = TRUE)
   })
   
+  # TEXT INPUT FOR WORDS
+  output$word_selector <- renderUI({
+    textInput(inputId = "word",
+              label = "Word",
+              value = "ball,the")
+  })
+  
   # SLIDER FOR AGE RANGE
-  output$age_range <- renderUI({
+  # TODO: revert this
+  output$age_range_selector <- renderUI({
     # Don't adjust slider if age range has been altered by user
     selected_min_age <- input$age_range[1]
     selected_max_age <- input$age_range[2]
@@ -132,6 +149,15 @@ server <- function(input, output, session) {
                 value=value, 
                 step=.5, min=floor(age_min()), max=ceiling(age_max()))
   })
+  
+  # SLIDER FOR AGE BINWIDTH
+  output$age_binwidth_selector <- renderUI({
+    sliderInput("age_binwidth", 
+                label="Bin size (months)", 
+                value=2, step=2,
+                min=0, max=24)
+  })
+  
   
   # --------------------- COMPUTATION OF FREQSs ---------------------
   

@@ -76,6 +76,15 @@ server <- function(input, output, session) {
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
   
+  # SELECTOR FOR COLLECTIONS
+  output$collection_selector <- renderUI({
+    selectizeInput(inputId = "collection",
+                   label = "Collection", 
+                   choices = collections,
+                   selected = "Eng-NA", 
+                   multiple = FALSE)
+  })
+  
   # SELECTOR FOR CORPORA
   output$corpus_selector <- renderUI({
     selectizeInput(inputId = "corpus",
@@ -104,11 +113,19 @@ server <- function(input, output, session) {
   })
   
   # SLIDER FOR AGE RANGE
-  output$age_range <- renderUI({
+  output$age_range_selector <- renderUI({
       sliderInput("age_range", 
               label="Ages to include (years)", 
               value=c(age_min, age_max), 
               step=.5, min=floor(age_min()), max=ceiling(age_max()))
+  })
+  
+  # SLIDER FOR AGE BINWIDTH
+  output$age_binwidth_selector <- renderUI({
+    sliderInput("age_binwidth", 
+                label="Bin size (months)", 
+                value=2, step=2,
+                min=0, max=24)
   })
   
   # --------------------- COMPUTATION OF MLUS ---------------------
