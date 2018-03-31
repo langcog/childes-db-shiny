@@ -131,7 +131,7 @@ server <- function(input, output, session) {
   output$age_range <- renderUI({
     sliderInput("age_range", 
                 label="Ages to include (years)", 
-                value=c(age_min, age_max), 
+                value=c(age_min(), age_max()), 
                 step=.25, min=floor(age_min()), max=ceiling(age_max()))
   })
   
