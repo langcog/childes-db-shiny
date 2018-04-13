@@ -116,7 +116,7 @@ server <- function(input, output, session) {
   output$measure_selector <- renderUI({
     selectizeInput(inputId = "measure",
                    label = "Measure", 
-                   choices = c("MLU-w", "TTR"),
+                   choices = c("MLU-w", "TTR", "MTLD", "HD-D"),
                    selected = "MLU-w", 
                    multiple = FALSE)
   })
@@ -178,6 +178,18 @@ server <- function(input, output, session) {
                     measure = signif(total_types / total_tokens, digits = 2),
                     n = sum(num_utterances)) 
       }
+      else if (input$measure == "MTLD") {
+        filtered_data %>%
+          group_by(speaker_role, age_y) %>%
+          summarise(measure = signif(mean(mtld), digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "HD-D") {
+        filtered_data %>%
+          group_by(speaker_role, age_y) %>%
+          summarise(measure = signif(mean(hdd), digits = 2),
+                    n = sum(num_utterances)) 
+      }
     } else {
       
       if (input$measure == "MLU-w") {
@@ -188,9 +200,21 @@ server <- function(input, output, session) {
       }
       else if (input$measure == "TTR") {
         filtered_data %>%
-          group_by(speaker_role, age_y) %>%
+          group_by(target_child_name, speaker_role, age_y) %>%
           summarise(total_types = sum(num_types), total_tokens = sum(num_tokens),
                     measure = signif(total_types / total_tokens, digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "MTLD") {
+        filtered_data %>%
+          group_by(target_child_name, speaker_role, age_y) %>%
+          summarise(measure = signif(mean(mtld), digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "HD-D") {
+        filtered_data %>%
+          group_by(target_child_name, speaker_role, age_y) %>%
+          summarise(measure = signif(mean(hdd), digits = 2),
                     n = sum(num_utterances)) 
       }
     }
