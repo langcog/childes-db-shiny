@@ -238,28 +238,30 @@ server <- function(input, output, session) {
     req(freqs())
     
     x_lim_spacer <- input$age_range[2] * .1
-    nudge_val <- input$age_range[2] * .05
+    nudge_val <- input$age_range[2] * .06
     
     p <- ggplot(freqs(), 
            aes(x = age_y,
                y = ppm,
                linetype = speaker_role,
                color = gloss)) +
-      geom_point(size = 3, alpha = 0.3) +
+      geom_point(size = 5, alpha = 0.4) +
       geom_smooth(se=FALSE, method = "loess", span=1, size = 2) + 
       geom_label_repel(
         data = filter(freqs(), age_y == max(age_y)),
-        aes(label = gloss),
-        size = 6,
+        aes(label = gloss, fill = gloss),
+        size = 10,
+        fontface = 'bold', color = 'white',
         nudge_x = nudge_val,
         segment.color = NA
       ) +
-      guides(color=F) +
+      guides(color=F, fill =F) +
       labs(x = "Target Child Age (years)",
            y = "Frequency (parts per million words)",
            linetype = "Speaker role:") +
       xlim(input$age_range[1], input$age_range[2] + x_lim_spacer) +
       scale_colour_solarized(name = "gloss") + 
+      scale_fill_solarized(name = "gloss") + 
       theme_few() +
       theme(text = element_text(size = 20),
             legend.position = "top")
