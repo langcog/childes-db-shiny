@@ -13,6 +13,7 @@ library(childesr)
 library(tidytext)
 library(stringr)
 library(forcats)
+library(ggrepel)
 
 # --------------------- CONSTANTS ---------------------
 
