@@ -18,7 +18,9 @@ ui <- fluidPage(
       uiOutput("age_range_selector"),
       uiOutput("age_binwidth_selector"),
       # Note that uiOutputs are necessary for bookmark to work
-      bookmarkButton(label = "Share Analysis")
+      bookmarkButton(label = "Share Analysis"),
+      br(), br(),
+      uiOutput("db_version_number")
     ),
     
     mainPanel(

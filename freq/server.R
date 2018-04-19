@@ -163,6 +163,11 @@ server <- function(input, output, session) {
                 min=0, max=24)
   })
   
+  # DB VERSION NUMBER
+  output$db_version_number <- renderUI({
+    paste("Using database version", get_database_version())
+  })
+  
   
   # --------------------- COMPUTATION OF FREQSs ---------------------
   

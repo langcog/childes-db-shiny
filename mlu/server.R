@@ -116,7 +116,7 @@ server <- function(input, output, session) {
   output$measure_selector <- renderUI({
     selectizeInput(inputId = "measure",
                    label = "Measure", 
-                   choices = c("MLU-w", "TTR", "MTLD", "HD-D"),
+                   choices = c("MLU-w", "MLU-m", "TTR", "MTLD", "HD-D"),
                    selected = "MLU-w", 
                    multiple = FALSE)
   })
@@ -135,6 +135,11 @@ server <- function(input, output, session) {
                 label="Bin size (months)", 
                 value=2, step=2,
                 min=0, max=24)
+  })
+  
+  # DB VERSION NUMBER
+  output$db_version_number <- renderUI({
+    paste("Using database version", get_database_version())
   })
   
   # --------------------- COMPUTATION OF MEASURES ---------------------
@@ -168,7 +173,13 @@ server <- function(input, output, session) {
       if (input$measure == "MLU-w") {
         filtered_data %>%
           group_by(speaker_role, age_y) %>%
-          summarise(measure = signif(mean(mlu), digits = 2),
+          summarise(measure = signif(mean(mlu_w), digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "MLU-m") {
+        filtered_data %>%
+          group_by(speaker_role, age_y) %>%
+          summarise(measure = signif(mean(mlu_m), digits = 2),
                     n = sum(num_utterances)) 
       }
       else if (input$measure == "TTR") {
@@ -196,6 +207,12 @@ server <- function(input, output, session) {
         filtered_data %>%
           group_by(target_child_name, speaker_role, age_y) %>%
           summarise(measure = signif(mean(mlu), digits = 2),
+                    n = sum(num_utterances)) 
+      }
+      else if (input$measure == "MLU-m") {
+        filtered_data %>%
+          group_by(target_child_name, speaker_role, age_y) %>%
+          summarise(measure = signif(mean(mlu_m), digits = 2),
                     n = sum(num_utterances)) 
       }
       else if (input$measure == "TTR") {
