@@ -72,7 +72,7 @@ server <- function(input, output, session) {
     
     get_types(collection = input$collection, 
               corpus = if("All" %in% input$corpus) NULL else input$corpus,
-              child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot,
+              target_child = if("All" %in% input$children_to_plot) NULL else input$children_to_plot,
               type = input$word %>% strsplit(split=",") %>% unlist %>% trimws) %>%
       mutate(gloss = tolower(gloss))
 
@@ -84,7 +84,7 @@ server <- function(input, output, session) {
     
     get_speaker_statistics(collection = input$collection,
                            corpus = if ("All" %in% input$corpus) NULL else input$corpus,
-                           child = if ("All" %in% input$children_to_plot) NULL else input$children_to_plot)
+                           target_child = if ("All" %in% input$children_to_plot) NULL else input$children_to_plot)
   })
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
@@ -165,7 +165,7 @@ server <- function(input, output, session) {
   
   # DB VERSION NUMBER
   output$db_version_number <- renderUI({
-    paste("Using database version", get_database_version())
+    paste("Using database version", "2020.1")
   })
   
   
