@@ -56,19 +56,19 @@ server <- function(input, output, session) {
   age_min <- reactive({
     req(input$children_to_plot)
     
-    ages_in_days <- data()$target_child_age %>%
+    ages_in_months <- data()$target_child_age %>%
       na.omit()
     
-    ifelse(is.null(ages_in_days), 1, min(ages_in_days))/DAYS_PER_YEAR
+    ifelse(is.null(ages_in_months), 1, min(ages_in_months))/MONTHS_PER_YEAR
   })
   
   age_max <- reactive({
     req(input$children_to_plot)
     
-    ages_in_days <- data()$target_child_age %>%
+    ages_in_months <- data()$target_child_age %>%
       na.omit()
     
-    ifelse(is.null(ages_in_days), 1, max(ages_in_days))/DAYS_PER_YEAR
+    ifelse(is.null(ages_in_months), 1, max(ages_in_months))/MONTHS_PER_YEAR
   })
   
   # --------------------- UI ELEMENTS FOR SELECTORS ---------------------
@@ -157,17 +157,17 @@ server <- function(input, output, session) {
     
     filtered_data <- data() 
     # %>%
-    #   filter(target_child_age >= input$age_range[1] * DAYS_PER_YEAR,
-    #          target_child_age <= input$age_range[2] * DAYS_PER_YEAR) 
+    #   filter(target_child_age >= input$age_range[1] * MONTHS_PER_YEAR,
+    #          target_child_age <= input$age_range[2] * MONTHS_PER_YEAR) 
     
     if(input$age_binwidth > 0) {
       filtered_data %<>%
-        mutate(age_mo = target_child_age / DAYS_PER_MONTH, 
+        mutate(age_mo = target_child_age, 
                age_mo_binned = floor(age_mo / input$age_binwidth) * input$age_binwidth, 
                age_y = (age_mo_binned + input$age_binwidth/2)/ MONTHS_PER_YEAR) 
     } else {
       filtered_data %<>%
-        mutate(age_mo = target_child_age / DAYS_PER_MONTH, 
+        mutate(age_mo = target_child_age, 
                age_y = age_mo / MONTHS_PER_YEAR) 
     }
     
