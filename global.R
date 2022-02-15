@@ -13,7 +13,8 @@ library(childesr)
 library(tidytext)
 library(stringr)
 library(forcats)
-library(ggrepel, lib.loc="/usr/local/lib/R/site-library")
+library(ggrepel)
+# , lib.loc="/usr/local/lib/R/site-library")
 
 # --------------------- CONSTANTS ---------------------
 
